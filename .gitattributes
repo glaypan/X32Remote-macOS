@@ -1,0 +1,8 @@
+# 强制 LF：shell 脚本以 CRLF 入库会在 macOS 上 bad interpreter
+* text=auto eol=lf
+*.sh text eol=lf
+*.py text eol=lf
+*.swift text eol=lf
+*.yml text eol=lf
+*.plist text eol=lf
+*.md text eol=lf

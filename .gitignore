@@ -1,0 +1,9 @@
+# 构建产物
+build/
+*.app
+*.zip
+.DS_Store
+__pycache__/
+*.pyc
+# 模拟器源码在构建时从协议仓按 tag 拉取，不入库
+x32_simulator.py

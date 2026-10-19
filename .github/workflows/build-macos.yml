@@ -1,0 +1,53 @@
+name: build-macos
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    # Intel 专属 runner（macos-13 已于 2025-12 退役；macos-15-intel 可用至 2027-08，
+    # 之后 GitHub 不再提供 x86_64 macOS runner，需迁移 arm64 或自建）
+    runs-on: macos-15-intel
+    env:
+      PY_VER: "3.14.8"
+      # 模拟器源码固定从协议仓的该 tag 拉取（唯一事实来源）
+      SIM_TAG: "spec-v1.5"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 拉取模拟器源码（协议仓 ${{ env.SIM_TAG }}）
+        run: |
+          mkdir -p build
+          curl -fsSL -o build/x32_simulator.py \
+            "https://raw.githubusercontent.com/glaypan/X32Remote-Protocol/${{ env.SIM_TAG }}/X32Simulator/x32_simulator.py"
+          wc -l build/x32_simulator.py
+
+      - name: 缓存 Python 框架
+        uses: actions/cache@v4
+        with:
+          path: build/python
+          key: ${{ runner.os }}-py-${{ env.PY_VER }}-x86_64-10146-${{ hashFiles('scripts/build_python.sh') }}
+
+      - name: 从源码编译 Python（x86_64 / 部署目标 10.14.6）
+        run: bash scripts/build_python.sh
+
+      - name: 组装 .app
+        run: bash scripts/build.sh
+
+      - name: 冒烟（重定位 / 部署目标 / /api/state）
+        run: bash scripts/smoke.sh
+
+      - name: 打包 zip
+        run: |
+          cd build
+          zip -rqy X32Remote-macOS-unsigned.zip X32Remote.app
+          shasum -a 256 X32Remote-macOS-unsigned.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: X32Remote-macOS-unsigned
+          path: build/X32Remote-macOS-unsigned.zip
+          if-no-files-found: error
