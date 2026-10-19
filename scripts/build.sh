@@ -1,6 +1,6 @@
 #!/bin/bash
-# 组装 X32Remote.app：编译 Swift 外壳（x86_64 / 10.14.6）+ 拷贝模拟器脚本 + Python 框架 + 图标。
-# 前置：scripts/build_python.sh 已产出 build/python/Python.framework，
+# 组装 X32Remote.app：编译 Swift 外壳（x86_64 / 10.14.6）+ 拷贝模拟器脚本 + 内置 Python + 图标。
+# 前置：scripts/build_python.sh 已产出 build/python/（bin + lib），
 #       build/x32_simulator.py 已就位（CI 从协议仓拉取；本地可手动拷贝）。
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -20,20 +20,20 @@ swiftc -target x86_64-apple-macos10.14.6 -swift-version 5 -O \
 
 echo "== 组装 .app =="
 rm -rf "$APP"
-mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" "$APP/Contents/Frameworks"
+mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BUILD/X32Remote" "$APP/Contents/MacOS/X32Remote"
 cp "$ROOT/Info.plist" "$APP/Contents/Info.plist"
 printf 'APPL????' > "$APP/Contents/PkgInfo"
 cp "$SIM_SRC" "$APP/Contents/Resources/x32_simulator.py"
 
-FW="$BUILD/python/Python.framework"
-if [ ! -d "$FW" ]; then
-    echo "缺少 $FW —— 先执行 scripts/build_python.sh" >&2
+PYROOT="$BUILD/python"
+if [ ! -x "$PYROOT/bin/python3" ]; then
+    echo "缺少 $PYROOT/bin/python3 —— 先执行 scripts/build_python.sh" >&2
     exit 1
 fi
-cp -R "$FW" "$APP/Contents/Frameworks/"
-find "$APP/Contents/Frameworks/Python.framework" -name "__pycache__" -type d -prune -exec rm -rf {} + 2>/dev/null || true
-find "$APP/Contents/Frameworks/Python.framework" -name "*.pyc" -delete 2>/dev/null || true
+cp -R "$PYROOT" "$APP/Contents/Resources/python"
+find "$APP/Contents/Resources/python" -name "__pycache__" -type d -prune -exec rm -rf {} + 2>/dev/null || true
+find "$APP/Contents/Resources/python" -name "*.pyc" -delete 2>/dev/null || true
 
 echo "== 生成图标 =="
 swiftc -O -sdk "$SDK" -o "$BUILD/make_icon" "$ROOT/tools/make_icon.swift"

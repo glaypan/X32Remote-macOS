@@ -1,24 +1,27 @@
 #!/bin/bash
-# 冒烟：验证 .app 内的 Python 框架真的能跑、部署目标不超 10.14.6、模拟器能无头启动。
+# 冒烟：验证 .app 内的 Python 真的能跑、部署目标不超 10.14.6、模拟器能无头启动。
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 APP="$ROOT/build/X32Remote.app"
-FW="$APP/Contents/Frameworks/Python.framework"
+PREFIX="$APP/Contents/Resources/python"
+PYBIN="$PREFIX/bin/python3"
 TMP="${RUNNER_TEMP:-/tmp}"
 mkdir -p "$TMP"
 
-V="$(ls "$FW/Versions" | grep -E '^[0-9]+\.[0-9]+$' | sort -V | tail -1)"
-PYBIN="$FW/Versions/$V/bin/python3"
+if [ ! -x "$PYBIN" ]; then
+    echo "找不到内置 Python: $PYBIN" >&2
+    exit 1
+fi
 echo "== 冒烟对象: $PYBIN =="
 
 echo "== 1. 标准库导入冒烟（模拟器实际用到的模块） =="
 "$PYBIN" -c "import argparse, collections, json, math, os, socket, socketserver, struct, sys, threading, time, urllib.parse, http.server; print('imports ok')"
 
-echo "== 2. 框架重定位：sys.executable 必须位于 .app 内 =="
-"$PYBIN" -c "import sys; assert 'X32Remote.app' in sys.executable, 'sys.executable=' + sys.executable; print('relocation ok:', sys.executable)"
+echo "== 2. 重定位：sys.executable 与 sys.prefix 都必须位于 .app 内 =="
+"$PYBIN" -c "import sys; assert 'X32Remote.app' in sys.executable, 'sys.executable=' + sys.executable; assert 'X32Remote.app' in sys.prefix, 'sys.prefix=' + sys.prefix; print('relocation ok:', sys.prefix)"
 
 echo "== 3. 部署目标断言（所有 Mach-O 的 minos ≤ 10.14.6） =="
-"$PYBIN" "$ROOT/scripts/check_deployment.py" "$FW" "10.14.6"
+"$PYBIN" "$ROOT/scripts/check_deployment.py" "$PREFIX" "10.14.6"
 
 echo "== 4. 模拟器无头启动 + /api/state + 控制台 HTML =="
 PORT=18080

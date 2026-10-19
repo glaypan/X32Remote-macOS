@@ -27,7 +27,7 @@ X32 虚拟调音台模拟器的 macOS 桌面外壳：**原生 AppKit 窗口（WK
 本地（需要 Xcode 与命令行工具）：
 
 ```bash
-bash scripts/build_python.sh   # 源码编译 Python 3.14.8 框架（约 3–6 分钟）
+bash scripts/build_python.sh   # 源码编译内置 Python 3.14.8（约 4–7 分钟）
 bash scripts/build.sh          # 编译 Swift 外壳 + 组装 .app
 bash scripts/smoke.sh          # 冒烟：重定位 / 部署目标 / /api/state
 ```
@@ -59,7 +59,7 @@ Info.plist   最低系统版本 10.14.6、禁突然终止（保证退出时收�
 
 - **未签名、未公证**：Gatekeeper 提示属预期；需要免提示分发需 Apple 开发者账号（$99/年）签名+公证
 - **仅 Intel x86_64**：Apple Silicon Mac 可通过 Rosetta 2 运行；arm64 原生版待后续
-- Python 为源码编译产物，`.app` 约 80–110MB
+- Python 为源码编译产物（普通 prefix 构建，非 framework），`.app` 约 60–90MB
 - `macos-15-intel` 是 GitHub 最后一个 x86_64 runner，**2027 年 8 月退役**，届时构建链需迁 arm64 或自建 runner
 - 模拟器网页服务监听 `0.0.0.0` 且无鉴权（与命令行版一致的设计），请在可信网络使用
 

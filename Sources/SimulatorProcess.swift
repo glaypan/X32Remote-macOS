@@ -200,18 +200,13 @@ final class SimulatorProcess {
                     socklen_t(MemoryLayout<sockaddr_in>.size)) == 0
     }
 
-    // MARK: - Python 框架定位
+    // MARK: - 内置 Python 定位
 
+    /// 内置 Python 是普通 prefix 构建（bin/python3 + lib/python3.14），
+    /// 靠 CPython 的 landmark 机制自我定位，无需 PYTHONHOME。
     private func bundledPythonURL() -> URL? {
-        guard let versions = Bundle.main.privateFrameworksURL?
-                .appendingPathComponent("Python.framework", isDirectory: true)
-                .appendingPathComponent("Versions", isDirectory: true) else { return nil }
-        guard let entries = try? FileManager.default.contentsOfDirectory(atPath: versions.path) else { return nil }
-        let numeric = entries
-            .filter { $0.range(of: #"^\d+\.\d+$"#, options: .regularExpression) != nil }
-            .sorted { $0.compare($1, options: .numeric) == .orderedDescending }
-        guard let best = numeric.first else { return nil }
-        let python = versions.appendingPathComponent(best).appendingPathComponent("bin/python3")
+        guard let base = Bundle.main.resourceURL else { return nil }
+        let python = base.appendingPathComponent("python/bin/python3")
         return FileManager.default.fileExists(atPath: python.path) ? python : nil
     }
 
