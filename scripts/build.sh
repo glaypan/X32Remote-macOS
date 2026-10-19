@@ -1,6 +1,6 @@
 #!/bin/bash
 # 组装 X32Remote.app：编译 Swift 外壳（x86_64 / 10.14.6）+ 拷贝模拟器脚本 + 内置 Python + 图标。
-# 前置：scripts/build_python.sh 已产出 build/python/（bin + lib），
+# 前置：scripts/build_python.sh 已产出 build/pyroot/（bin + lib），
 #       build/x32_simulator.py 已就位（CI 从协议仓拉取；本地可手动拷贝）。
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -26,7 +26,7 @@ cp "$ROOT/Info.plist" "$APP/Contents/Info.plist"
 printf 'APPL????' > "$APP/Contents/PkgInfo"
 cp "$SIM_SRC" "$APP/Contents/Resources/x32_simulator.py"
 
-PYROOT="$BUILD/python"
+PYROOT="$BUILD/pyroot"
 if [ ! -x "$PYROOT/bin/python3" ]; then
     echo "缺少 $PYROOT/bin/python3 —— 先执行 scripts/build_python.sh" >&2
     exit 1

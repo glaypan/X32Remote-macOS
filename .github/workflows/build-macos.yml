@@ -33,7 +33,7 @@ jobs:
       - name: 缓存 Python 框架
         uses: actions/cache@v4
         with:
-          path: build/python
+          path: build/pyroot
           key: ${{ runner.os }}-py-${{ env.PY_VER }}-x86_64-10146-${{ hashFiles('scripts/build_python.sh') }}
 
       - name: 从源码编译 Python（x86_64 / 部署目标 10.14.6）

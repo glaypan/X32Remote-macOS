@@ -1,5 +1,5 @@
 #!/bin/bash
-# 从源码编译 Python 3.14.8（x86_64，部署目标 10.14.6），产出 build/python/（bin + lib，可重定位）。
+# 从源码编译 Python 3.14.8（x86_64，部署目标 10.14.6），产出 build/pyroot/（bin + lib，可重定位）。
 #
 # 为什么不用 python.org 的 universal2 安装包：其 x86_64 slice 的最低系统版本不受控，
 # 无法保证能在 10.14.6 运行；源码编译可以显式指定 MACOSX_DEPLOYMENT_TARGET。
@@ -11,9 +11,9 @@
 set -euo pipefail
 PY_VER="${PY_VER:-3.14.8}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-OUT="$ROOT/build/python"
-if [ -x "$OUT/python/bin/python3" ]; then
-    echo "已存在 $OUT/python/bin/python3，跳过构建"
+OUT="$ROOT/build/pyroot"
+if [ -x "$OUT/bin/python3" ]; then
+    echo "已存在 $OUT/bin/python3，跳过构建"
     exit 0
 fi
 
@@ -36,7 +36,7 @@ echo "== configure (MACOSX_DEPLOYMENT_TARGET=10.14.6, 关闭 _sqlite3) =="
 # _sqlite3 的启用条件见 configure.ac 8313 行：have_sqlite3=yes && have_supported_sqlite3=yes。
 # 两个开关同时给：检测层（ac_cv_header_sqlite3_h）+ 模块层（py_cv_module__sqlite3）。
 ./configure \
-    --prefix="$OUT/python" \
+    --prefix="$OUT" \
     MACOSX_DEPLOYMENT_TARGET=10.14.6 \
     --with-ensurepip=no \
     --disable-test-modules \
@@ -58,14 +58,13 @@ echo "== make -j$(sysctl -n hw.ncpu 2>/dev/null || echo 4) =="
 make -j"$(sysctl -n hw.ncpu 2>/dev/null || echo 4)" >make.log 2>&1 || { tail -40 make.log; exit 1; }
 
 echo "== make install =="
-mkdir -p "$OUT"
-rm -rf "$OUT/python"
+rm -rf "$OUT"
 make install >install.log 2>&1 || { tail -40 install.log; exit 1; }
 
-if [ ! -x "$OUT/python/bin/python3" ]; then
-    echo "安装后未找到 $OUT/python/bin/python3" >&2
+if [ ! -x "$OUT/bin/python3" ]; then
+    echo "安装后未找到 $OUT/bin/python3" >&2
     ls -R "$OUT" | head -30 >&2
     exit 1
 fi
-echo "== 完成: $OUT/python/bin/python3 =="
-du -sh "$OUT/python"
+echo "== 完成: $OUT/bin/python3 =="
+du -sh "$OUT"
