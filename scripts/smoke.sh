@@ -20,8 +20,9 @@ echo "== 1. 标准库导入冒烟（模拟器实际用到的模块） =="
 echo "== 2. 重定位：sys.executable 与 sys.prefix 都必须位于 .app 内 =="
 "$PYBIN" -c "import sys; assert 'X32Remote.app' in sys.executable, 'sys.executable=' + sys.executable; assert 'X32Remote.app' in sys.prefix, 'sys.prefix=' + sys.prefix; print('relocation ok:', sys.prefix)"
 
-echo "== 3. 部署目标断言（所有 Mach-O 的 minos ≤ 10.14.6） =="
+echo "== 3. 部署目标与架构断言（minos ≤ 10.14.6，且含 x86_64） =="
 "$PYBIN" "$ROOT/scripts/check_deployment.py" "$PREFIX" "10.14.6"
+"$PYBIN" "$ROOT/scripts/check_deployment.py" "$APP/Contents/MacOS" "10.14.6"
 
 echo "== 4. 模拟器无头启动 + /api/state + 控制台 HTML =="
 PORT=18080

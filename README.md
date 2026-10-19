@@ -29,7 +29,7 @@ X32 虚拟调音台模拟器的 macOS 桌面外壳：**原生 AppKit 窗口（WK
 ```bash
 bash scripts/build_python.sh   # 源码编译内置 Python 3.14.8（约 4–7 分钟）
 bash scripts/build.sh          # 编译 Swift 外壳 + 组装 .app
-bash scripts/smoke.sh          # 冒烟：重定位 / 部署目标 / /api/state
+bash scripts/smoke.sh          # 冒烟：重定位 / 部署目标 + x86_64 架构断言 / /api/state
 ```
 
 CI：push 到 `main` 自动构建，`build-macos` 工作流产出
