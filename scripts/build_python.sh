@@ -25,26 +25,32 @@ curl -fsSL -o Python.tgz "https://www.python.org/ftp/python/$PY_VER/Python-$PY_V
 tar xf Python.tgz
 cd "Python-$PY_VER"
 
-echo "== configure (MACOSX_DEPLOYMENT_TARGET=10.14.6) =="
+echo "== configure (MACOSX_DEPLOYMENT_TARGET=10.14.6, 关闭 _sqlite3) =="
+# 为什么关 _sqlite3：macOS SDK 把 sqlite3_create_window_function 标为 10.15+，
+# 而 CPython 的 _sqlite/connection.c 无条件调用它，且自带 -Werror=unguarded-availability，
+# 10.14.6 部署目标下直接编译失败。不能降级该警告（那等于发布一个在老系统上
+# 加载不了、或调用不存在符号的 .so），必须让这个模块根本不进构建。
+#
+# 必须在 configure 层关：Modules/Setup.stdlib 会在 make 时由 config.status
+# 从 Setup.stdlib.in 重新生成，事后注释清单会被覆盖掉（踩过一次）。
+# _sqlite3 的启用条件见 configure.ac 8313 行：have_sqlite3=yes && have_supported_sqlite3=yes。
+# 两个开关同时给：检测层（ac_cv_header_sqlite3_h）+ 模块层（py_cv_module__sqlite3）。
 ./configure \
     --prefix="$OUT/python" \
     MACOSX_DEPLOYMENT_TARGET=10.14.6 \
     --with-ensurepip=no \
     --disable-test-modules \
+    ac_cv_header_sqlite3_h=no \
+    py_cv_module__sqlite3=n/a \
     >configure.log 2>&1 || { tail -40 configure.log; exit 1; }
 
-# 禁用 _sqlite3：macOS SDK 的 sqlite3.h 把 sqlite3_create_window_function 标为 10.15+，
-# 10.14.6 部署目标下 CPython 的 -Werror=unguarded-availability 会直接编译失败。
-# 不降级该警告（那等于发布一个在老系统上加载不了、或调用不存在符号的 .so），
-# 而是把模块从构建清单摘掉——模拟器用不到 sqlite。
-for f in Modules/Setup.stdlib.in Modules/Setup.stdlib; do
-    if [ -f "$f" ]; then
-        sed -i '' 's/^\(@MODULE__SQLITE3_TRUE@\)/#\1/' "$f" 2>/dev/null || true
-        sed -i '' 's/^\(_sqlite3[[:space:]]\)/#\1/' "$f" 2>/dev/null || true
-    fi
-done
-echo "-- 模块清单状态 --"
+# 断言：清单里 _sqlite3 必须已注释，否则编译必炸——早失败早报，别等 3 分钟后
 if [ -f Modules/Setup.stdlib ]; then
+    if grep -qE '^_sqlite3[[:space:]]' Modules/Setup.stdlib; then
+        echo "错误：_sqlite3 仍处于启用状态，configure 开关未生效" >&2
+        grep -n "_sqlite3" Modules/Setup.stdlib >&2
+        exit 1
+    fi
     grep -n "_sqlite3" Modules/Setup.stdlib || echo "Setup.stdlib 中已无 _sqlite3 条目"
 fi
 
