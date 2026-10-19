@@ -114,8 +114,12 @@ final class SimulatorProcess {
                 kill(p.processIdentifier, SIGKILL)
             }
         }
-        try? logHandle?.close()
-        logHandle = nil
+        // FileHandle 的开关都收敛到 logQueue：主线程直接 close 与队列里的
+        // write 竞争，退出时有偶发 NSException 崩溃的风险。
+        logQueue.sync {
+            try? logHandle?.close()
+            logHandle = nil
+        }
         process = nil
     }
 

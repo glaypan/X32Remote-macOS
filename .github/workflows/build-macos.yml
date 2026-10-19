@@ -6,6 +6,11 @@ on:
     tags: ["v*"]
   workflow_dispatch:
 
+# 同一 ref 连续 push 时取消旧 run：两个 run 并发会在冒烟阶段抢 UDP 10023，假失败
+concurrency:
+  group: build-macos-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     # Intel 专属 runner（macos-13 已于 2025-12 退役；macos-15-intel 可用至 2027-08，
