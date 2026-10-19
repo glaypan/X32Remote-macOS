@@ -116,8 +116,9 @@ final class SimulatorProcess {
         }
         // FileHandle 的开关都收敛到 logQueue：主线程直接 close 与队列里的
         // write 竞争，退出时有偶发 NSException 崩溃的风险。
+        // 注意用 closeFile()：close() 是 macOS 10.15+ 的 API，10.14.6 不可用。
         logQueue.sync {
-            try? logHandle?.close()
+            logHandle?.closeFile()
             logHandle = nil
         }
         process = nil
@@ -196,8 +197,10 @@ final class SimulatorProcess {
         defer { close(fd) }
         var yes: Int32 = 1
         setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, socklen_t(MemoryLayout<Int32>.size))
-        return bind(fd, UnsafeRawPointer(&addr).assumingMemoryBound(to: sockaddr.self),
-                    socklen_t(MemoryLayout<sockaddr_in>.size)) == 0
+        return withUnsafeMutablePointer(to: &addr) { ptr in
+            bind(fd, UnsafeRawPointer(ptr).assumingMemoryBound(to: sockaddr.self),
+                 socklen_t(MemoryLayout<sockaddr_in>.size))
+        } == 0
     }
 
     // MARK: - 内置 Python 定位
