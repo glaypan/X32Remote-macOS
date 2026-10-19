@@ -28,6 +28,22 @@ echo "== configure (MACOSX_DEPLOYMENT_TARGET=10.14.6) =="
     --disable-test-modules \
     >configure.log 2>&1 || { tail -40 configure.log; exit 1; }
 
+# 禁用 _sqlite3：macOS SDK 的 sqlite3.h 把 sqlite3_create_window_function 标为 10.15+，
+# 10.14.6 部署目标下 CPython 的 -Werror=unguarded-availability 会直接编译失败。
+# 不降级该警告（那等于发布一个在老系统上加载不了、或调用不存在符号的 .so），
+# 而是把模块从构建清单摘掉——模拟器用不到 sqlite。
+for f in Modules/Setup.stdlib.in Modules/Setup.stdlib; do
+    if [ -f "$f" ]; then
+        sed -i '' 's/^\(@MODULE__SQLITE3_TRUE@\)/#\1/' "$f" 2>/dev/null || true
+        sed -i '' 's/^\(_sqlite3[[:space:]]\)/#\1/' "$f" 2>/dev/null || true
+    fi
+done
+echo "-- 模块清单状态 --"
+ls -1 Modules/Setup* 2>/dev/null || true
+if [ -f Modules/Setup.stdlib ]; then
+    grep -n "_sqlite3" Modules/Setup.stdlib || echo "Setup.stdlib 中已无 _sqlite3 条目"
+fi
+
 echo "== make -j$(sysctl -n hw.ncpu 2>/dev/null || echo 4) =="
 make -j"$(sysctl -n hw.ncpu 2>/dev/null || echo 4)" >make.log 2>&1 || { tail -40 make.log; exit 1; }
 make install >install.log 2>&1 || { tail -40 install.log; exit 1; }
