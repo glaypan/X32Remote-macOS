@@ -1,3 +1,3 @@
-# X32 Remote macOS v1.0.0 发布物校验和（2026-10-19）
+# X32 Remote macOS v1.0.1 发布物校验和（2026-10-23）
 # 校验：shasum -a 256 -c SHA256SUMS.txt
-cfe3bb56b68653ce6fba27dedcee71a13d04186f56a475686c400cbc35b6033d  X32Remote-macOS-unsigned.zip
+b62815ee54e177854f96e4d456a866e2e0fba85f30f0e864ed1acd43a6009f6a  X32Remote-macOS-unsigned.zip
