@@ -1,3 +1,8 @@
-# X32 Remote macOS v1.0.1 发布物校验和（2026-10-23）
+# X32 Remote macOS v1.1.0（Commander 版）发布物校验和（2026-10-24）
 # 校验：shasum -a 256 -c SHA256SUMS.txt
-b62815ee54e177854f96e4d456a866e2e0fba85f30f0e864ed1acd43a6009f6a  X32Remote-macOS-unsigned.zip
+# 说明：
+#   系统要求 macOS 10.14.6+ / Intel(x86_64)；Apple Silicon 走 Rosetta 2
+#   内置内核 = 协议仓 spec-v1.8（10118 行，sha256 e9b27660…）
+#   66 个 Mach-O 逐个断言 minos ≤ 10.14.6 且含 x86_64（CI 冒烟 + 离线复验）
+#   未签名未公证，首次需右键打开
+476e5daf117b5431a495bb5a5b2025c83e70d95195c92429676b3474e6d1e377 *X32Remote-macOS-1.1.0-unsigned.zip
