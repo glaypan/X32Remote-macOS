@@ -6,7 +6,7 @@ X32 虚拟调音台模拟器的 macOS 桌面外壳：**原生 AppKit 窗口（WK
 |---|---|
 | 目标平台 | macOS **10.14.6+**，**仅 Intel（x86_64）** |
 | 分发形式 | 未签名 `.app`（首次需右键打开，见下文） |
-| 模拟器源码 | 构建时从 [glaypan/X32Remote-Protocol](https://github.com/glaypan/X32Remote-Protocol) 按 tag `spec-v1.7` 拉取，保持唯一事实来源 |
+| 模拟器源码 | 构建时从 [glaypan/X32Remote-Protocol](https://github.com/glaypan/X32Remote-Protocol) 按 tag `spec-v1.8` 拉取，保持唯一事实来源 |
 | Python | CI 源码编译 3.14.8（`MACOSX_DEPLOYMENT_TARGET=10.14.6`），非 universal2 安装包 |
 
 ## 功能
