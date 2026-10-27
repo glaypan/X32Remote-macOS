@@ -98,7 +98,15 @@ echo "== configure (MACOSX_DEPLOYMENT_TARGET=10.14.6, 关闭 _sqlite3, 切断 Ho
 #                                     libintl，且不依赖"系统恰好有 /usr/lib/libintl"。
 #   ac_cv_lib_intl_textdomain=no     双保险：WITH_LIBINTL 不定义，-lintl 不进 LIBS
 #   ac_cv_header_gdbm_h=no            gdbm 头文件不存在 → _gdbm 不构建
-#   ac_cv_header_ndbm_h=no            ndbm 头文件不存在 → _dbm 不构建（连带 gdbm_compat 搜索也跳过）
+#   ac_cv_header_ndbm_h=no            ndbm 头文件不存在 → _dbm 的 ndbm 分支不构建
+#   ac_cv_header_gdbm_slash_ndbm_h=no / gdbm_dash_ndbm_h=no
+#                                     **关键**：configure.ac 4623 行还有第二个
+#                                     dbm_open 搜索，只由 gdbm/ndbm.h 或
+#                                     gdbm-ndbm.h 守卫（ runner 上 Homebrew gdbm
+#                                     提供前者），且它会 AS_UNSET 掉
+#                                     ac_cv_search_dbm_open——只禁 ndbm_h 不够，
+#                                     _dbm 照样链 libgdbm_compat（硬闸抓到过）
+#   ac_cv_header_db_h=no              bdb 头文件判否，-ldb 链接尝试直接跳过
 #   ac_cv_search_dbm_open=no          双保险：dbm_open 符号搜索直接判否
 #   ac_cv_have_libdb=no               bdb 后端判否（macOS 本来也没有）
 #   ac_cv_working_openssl_ssl=no      _ssl 门闩（configure.ac 8342 行）→ 不构建
@@ -120,6 +128,9 @@ PKG_CONFIG="$WORK/pkg-config-deny" ./configure \
     ac_cv_lib_intl_textdomain=no \
     ac_cv_header_gdbm_h=no \
     ac_cv_header_ndbm_h=no \
+    ac_cv_header_gdbm_slash_ndbm_h=no \
+    ac_cv_header_gdbm_dash_ndbm_h=no \
+    ac_cv_header_db_h=no \
     ac_cv_search_dbm_open=no \
     ac_cv_have_libdb=no \
     ac_cv_working_openssl_ssl=no \
