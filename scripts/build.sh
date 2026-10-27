@@ -40,6 +40,12 @@ swiftc -O -sdk "$SDK" -o "$BUILD/make_icon" "$ROOT/tools/make_icon.swift"
 "$BUILD/make_icon" "$BUILD/AppIcon.iconset"
 iconutil -c icns -o "$APP/Contents/Resources/AppIcon.icns" "$BUILD/AppIcon.iconset"
 
+echo "== 外部依赖硬闸：最终 .app 不得引用构建机私有动态库 =="
+# v1.1.2 事故复盘：内置 Python 曾链 Homebrew keg-only 库（/usr/local/opt/...），
+# 用户机上 dyld: Library not loaded，python3 起不来。构造脚本已在 pyroot 层拦过一次，
+# 这里对组装后的 .app（含 Swift 外壳）再拦一次 —— 发布出去的东西必须自包含。
+"$PYROOT/bin/python3" "$ROOT/tools/list_dylib_deps.py" "$APP"
+
 echo "== 完成 =="
 echo "$APP"
 du -sh "$APP"

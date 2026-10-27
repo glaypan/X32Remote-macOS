@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 """离线校验 macOS .app：纯 Python 解析 Mach-O，不需要 macOS / otool / lipo。
 
-用途：在没有 Mac 的机器上（例如 Windows 上等 CI）确认三件事：
+用途：在没有 Mac 的机器上（例如 Windows 上等 CI）确认五件事：
   1. 每个 Mach-O 的 **minos ≤ 部署目标**（默认 10.14.6）—— 这是"能在老系统上跑"的硬证据；
   2. 架构包含 **x86_64**；
   3. Info.plist 的版本与最低系统版本符合预期；
-  4. 内置内核与协议仓对应 tag 的 sha256 一致（防止"发布包里的内核不是那一版"）。
+  4. 内置内核与协议仓对应 tag 的 sha256 一致（防止"发布包里的内核不是那一版"）；
+  5. **没有任何 Mach-O 引用系统库之外的动态库** —— /usr/lib、/System 之外
+     的路径（/usr/local/opt/...、/opt/homebrew/... 等构建机私有路径）一律拒绝。
+     v1.1.2 事故：内置 Python 链了 Homebrew 的 keg-only 库，用户机上
+     dyld: Library not loaded，python3 起不来。前三项检查查不到这类问题，
+     必须单独扫 LC_LOAD_DYLIB。
 
 用法:
   python tools/check_app_offline.py build/dl/X32Remote.app --sim-sha256 <期望值> \
@@ -18,6 +23,9 @@ import os
 import plistlib
 import struct
 import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from list_dylib_deps import parse_load_cmds, is_external  # noqa: E402
 
 MH_MAGIC_64 = 0xFEEDFACF
 LC_VERSION_MIN_MACOSX = 0x24
@@ -81,6 +89,7 @@ def main():
     fails = []
     machos = 0
     worst = None
+    ext_deps = 0
     for root, _dirs, files in os.walk(args.app):
         for name in files:
             p = os.path.join(root, name)
@@ -100,10 +109,18 @@ def main():
                 fails.append("架构不是 x86_64: %s -> %s" % (rel, arch))
             if worst is None or tuple(minos) > tuple(worst[1]):
                 worst = (rel, minos)
+            # 第 5 项：外部动态库依赖（v1.1.2 事故的回归防线）
+            deps = parse_load_cmds(p)
+            if deps:
+                for tag, dep in deps[1]:
+                    if is_external(dep):
+                        ext_deps += 1
+                        fails.append("引用构建机私有动态库: %s -> %s (%s)" % (rel, dep, tag))
 
     print("Mach-O 文件数: %d" % machos)
     if worst:
         print("最高 minos: %s (%s)" % (".".join(map(str, worst[1])), worst[0]))
+    print("外部私有动态库引用: %d 处（必须为 0）" % ext_deps)
 
     info_path = os.path.join(args.app, "Contents", "Info.plist")
     with open(info_path, "rb") as f:
