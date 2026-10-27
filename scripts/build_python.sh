@@ -87,7 +87,16 @@ echo "== configure (MACOSX_DEPLOYMENT_TARGET=10.14.6, 关闭 _sqlite3, 切断 Ho
 # 两个开关同时给：检测层（ac_cv_header_sqlite3_h）+ 模块层（py_cv_module__sqlite3）。
 #
 # 其余新增开关（全部在 Python-3.14.8 生成的 configure 里逐个核对过变量名）：
-#   ac_cv_lib_intl_textdomain=no      AC_CHECK_LIB([intl],[textdomain]) 直接判否 → 不链 libintl
+#   ac_cv_header_libintl_h=no        **不能只禁 -lintl**：SDK 的 libintl.h 会把
+#                                     setlocale/textdomain 等宏重命名成 libintl_*
+#                                     符号（Apple 的 libintl.dylib 导出这套名字），
+#                                     _localemodule.c 只要见到头文件就引用它们，
+#                                     链接期必须提供 libintl。而 _locale.gettext /
+#                                     textdomain 系列方法全库无人使用（locale.py 只用
+#                                     _getdefaultlocale / getencoding，gettext.py 是
+#                                     纯 Python 实现），禁掉头文件检测即可彻底不链
+#                                     libintl，且不依赖"系统恰好有 /usr/lib/libintl"。
+#   ac_cv_lib_intl_textdomain=no     双保险：WITH_LIBINTL 不定义，-lintl 不进 LIBS
 #   ac_cv_header_gdbm_h=no            gdbm 头文件不存在 → _gdbm 不构建
 #   ac_cv_header_ndbm_h=no            ndbm 头文件不存在 → _dbm 不构建（连带 gdbm_compat 搜索也跳过）
 #   ac_cv_search_dbm_open=no          双保险：dbm_open 符号搜索直接判否
@@ -107,6 +116,7 @@ PKG_CONFIG="$WORK/pkg-config-deny" ./configure \
     --with-system-libmpdec=no \
     ac_cv_header_sqlite3_h=no \
     py_cv_module__sqlite3=n/a \
+    ac_cv_header_libintl_h=no \
     ac_cv_lib_intl_textdomain=no \
     ac_cv_header_gdbm_h=no \
     ac_cv_header_ndbm_h=no \
