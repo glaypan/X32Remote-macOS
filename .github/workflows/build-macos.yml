@@ -19,7 +19,7 @@ jobs:
     env:
       PY_VER: "3.14.8"
       # 模拟器源码固定从协议仓的该 tag 拉取（唯一事实来源）
-      SIM_TAG: "spec-v1.9"
+      SIM_TAG: "spec-v1.10"
     steps:
       - uses: actions/checkout@v4
 
